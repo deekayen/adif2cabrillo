@@ -1,0 +1,92 @@
+# ARRL/RAC Field Day section abbreviations (used in the FD exchange).
+# Format: ABBR  Full name (Division/Country)
+
+# --- ARRL Divisions (USA) ---
+CT   Connecticut (New England)
+EMA  Eastern Massachusetts (New England)
+ME   Maine (New England)
+NH   New Hampshire (New England)
+RI   Rhode Island (New England)
+VT   Vermont (New England)
+WMA  Western Massachusetts (New England)
+ENY  Eastern New York (Hudson)
+NLI  New York City / Long Island (Hudson)
+NNY  Northern New York (Hudson)
+NNJ  Northern New Jersey (Hudson)
+SNJ  Southern New Jersey (Atlantic)
+WNY  Western New York (Atlantic)
+DE   Delaware (Atlantic)
+EPA  Eastern Pennsylvania (Atlantic)
+MDC  Maryland-DC (Atlantic)
+WPA  Western Pennsylvania (Atlantic)
+AL   Alabama (Southeastern)
+GA   Georgia (Southeastern)
+SC   South Carolina (Roanoke)
+NC   North Carolina (Roanoke)
+VA   Virginia (Roanoke)
+WV   West Virginia (Roanoke)
+NFL  Northern Florida (Southeastern)
+SFL  Southern Florida (Southeastern)
+WCF  West Central Florida (Southeastern)
+PR   Puerto Rico (Southeastern)
+VI   US Virgin Islands (Southeastern)
+KY   Kentucky (Great Lakes)
+MI   Michigan (Great Lakes)
+OH   Ohio (Great Lakes)
+AR   Arkansas (Delta)
+LA   Louisiana (Delta)
+MS   Mississippi (Delta)
+TN   Tennessee (Delta)
+NTX  North Texas (West Gulf)
+STX  South Texas (West Gulf)
+WTX  West Texas (West Gulf)
+OK   Oklahoma (West Gulf)
+NM   New Mexico (Rocky Mountain)
+CO   Colorado (Rocky Mountain)
+UT   Utah (Rocky Mountain)
+WY   Wyoming (Rocky Mountain)
+EB   East Bay (Pacific)
+SCV  Santa Clara Valley (Pacific)
+SF   San Francisco (Pacific)
+SJV  San Joaquin Valley (Pacific)
+SV   Sacramento Valley (Pacific)
+PAC  Pacific (Pacific)
+NV   Nevada (Pacific)
+LAX  Los Angeles (Southwestern)
+ORG  Orange (Southwestern)
+SB   Santa Barbara (Southwestern)
+SDG  San Diego (Southwestern)
+AZ   Arizona (Southwestern)
+IL   Illinois (Central)
+IN   Indiana (Central)
+WI   Wisconsin (Central)
+IA   Iowa (Midwest)
+KS   Kansas (Midwest)
+MO   Missouri (Midwest)
+NE   Nebraska (Midwest)
+MN   Minnesota (Dakota)
+ND   North Dakota (Dakota)
+SD   South Dakota (Dakota)
+AK   Alaska (Northwestern)
+EWA  Eastern Washington (Northwestern)
+WWA  Western Washington (Northwestern)
+ID   Idaho (Northwestern)
+MT   Montana (Northwestern)
+OR   Oregon (Northwestern)
+
+# --- RAC Sections (Canada) ---
+NL   Newfoundland/Labrador
+MAR  Maritime (NB, NS, PEI)
+QC   Quebec
+ONE  Ontario East
+ONN  Ontario North
+ONS  Ontario South
+GTA  Greater Toronto Area
+MB   Manitoba
+SK   Saskatchewan
+AB   Alberta
+BC   British Columbia
+TER  Northern Territories (Yukon, NWT, Nunavut)
+
+# --- DX ---
+DX   DX station (outside ARRL/RAC field organization)

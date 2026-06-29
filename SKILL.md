@@ -1,86 +1,132 @@
 ---
 name: adif2cabrillo
 description: >-
-  Convert amateur-radio ADIF logs (.adi/.adif) to Cabrillo 3.0 contest logs.
-  Defaults to ARRL Field Day (CONTEST: ARRL-FD, exchange = class + section).
-  Use when a ham wants to turn a log exported from MacLoggerDX, WSJT-X, N3FJP,
-  HAMRS, fldigi, Log4OM, or similar into a Cabrillo file for upload to ARRL
-  (contest-log-submission.arrl.org or field-day.arrl.org). Triggers: "convert
-  ADIF to Cabrillo", "Field Day log", ".adi to .cbr", "Cabrillo format".
+  Convert a ham radio ADIF log (.adi/.adif) into a Cabrillo 3.0 contest log,
+  defaulting to ARRL Field Day (CONTEST: ARRL-FD). Trigger whenever the user
+  mentions converting, exporting, or submitting a Field Day log, an ADIF/ADI
+  file, or a Cabrillo/.cbr/.log file — e.g. "convert my Field Day ADIF export to
+  Cabrillo", "turn my .adi into Cabrillo", "make a Cabrillo file for Field Day",
+  "ADIF to Cabrillo", "prepare my log for fdentry". Works with exports from
+  MacLoggerDX, WSJT-X, N3FJP, HAMRS, fldigi, Log4OM, and similar loggers.
 license: MIT
 ---
 
-# ADIF → Cabrillo converter
+# ADIF → Cabrillo converter (ARRL Field Day)
 
-Converts an ADIF log into a Cabrillo 3.0 file. The default profile is **ARRL
-Field Day** (`CONTEST: ARRL-FD`), whose exchange is the operating *class* plus
+Converts an ADIF log into a Cabrillo 3.0 file. Default profile is **ARRL Field
+Day** (`CONTEST: ARRL-FD`); the Field Day exchange is the operating *class* plus
 the ARRL/RAC *section*, e.g. `1D GA`.
 
-## When to use
+`scripts/adif2cabrillo.py` is dependency-free Python 3. Run it from the skill
+directory.
 
-A ham has an ADIF export (most loggers only export ADIF) and the contest sponsor
-requires Cabrillo. ARRL accepts a Cabrillo file in lieu of a dupe sheet for Field
-Day, and requires Cabrillo for most other ARRL/CQ contests.
+## ⚠️ Required workflow: interview the operator BEFORE converting
 
-## How it works
+The submission callsign, class, and section are **not always reliably present in
+the ADIF**, and they change from year to year. Do not silently trust the file.
+Always run this interview first, then convert.
 
-`scripts/adif2cabrillo.py` is dependency-free Python 3. It:
+### Step 1 — Inspect the file
 
-1. Parses ADIF with proper `<FIELD:length>` length-based reading (so values with
-   spaces/commas are safe).
-2. Maps each QSO to a Cabrillo `QSO:` line. For Field Day the line is:
-   `QSO: freq mode date time MYCALL MYCLASS MYSECT THEIRCALL THEIRCLASS THEIRSECT`
-3. Builds a Cabrillo header. Writes the file with CRLF line endings (Cabrillo spec).
+Run the inspector to see what the log actually contains:
 
-### Field mapping (Field Day)
+```bash
+python3 scripts/adif2cabrillo.py --inspect INPUT.adi
+```
+
+This prints, without writing anything: callsign candidates found in the log
+(`OPERATOR`, `STATION_CALLSIGN`, `OWNER_CALLSIGN`), the distinct sent exchanges
+(`STX_STRING`), distinct received-section values, the bands and modes worked, the
+QSO count, and any sections it does not recognize.
+
+### Step 2 — Confirm the submission CALLSIGN (alternate-callsign reminder)
+
+Field Day groups frequently operate under a **special or alternate callsign**
+that is *different* from the operator's personal call and is often **absent from
+the ADIF export** (MacLoggerDX, for example, stores the operator in `OPERATOR`
+but not the station/club call). Explicitly remind the user:
+
+> "Your logger recorded the operator as `<OPERATOR>`. Field Day is often run
+> under a club call or a special 1×1 callsign (like W4S) that may not be in this
+> export. **What callsign did you submit under this year?**"
+
+Use the `AskUserQuestion` tool. Offer the detected candidates plus "Other" so the
+user can type a different/alternate call. Never assume last year's call carries
+over.
+
+### Step 3 — Build the CLASS together
+
+The Field Day class is **<number of transmitters><class letter>**, e.g. `1D`,
+`3A`, `2F`. Construct it with the user — do not just copy `STX_STRING`, since the
+group's class can change year to year:
+
+- Ask the **number of simultaneous transmitters** (1–20+).
+- Ask the **class letter**:
+  - `A` — Club/group portable (3+ people), not at a permanent station
+  - `B` — 1 or 2 person portable
+  - `C` — Mobile
+  - `D` — Home station on commercial power
+  - `E` — Home station on emergency power
+  - `F` — Emergency Operations Center (EOC)
+  - Append `B` for the 5 W battery variants (Class A-Battery, etc.) only if applicable
+- Show the user what was in the log last (`STX_STRING`) as a default, but confirm.
+
+### Step 4 — Confirm the SECTION
+
+Ask for the ARRL/RAC section abbreviation (e.g. `GA`). Validate it against
+`reference/arrl_sections.txt`. DX stations use `DX`. Pre-fill from `STX_STRING`
+but confirm.
+
+### Step 5 — Confirm category/power details
+
+Confirm (defaults in parentheses): operator category (MULTI-OP), station
+(PORTABLE), transmitters (from class number), power class (LOW = ≤100 W; QRP =
+≤5 W; HIGH otherwise), and the power multiplier for the score estimate (×2 for
+≤150 W, ×5 for the 5 W natural-power level, ×1 for >100 W on classes A/B/C).
+
+### Step 6 — Convert, validate, deliver
+
+```bash
+python3 scripts/adif2cabrillo.py INPUT.adi -o OUTPUT.log \
+  --callsign <CONFIRMED-CALL> --class <CONFIRMED-CLASS> --section <CONFIRMED-SECTION> \
+  --club "<CLUB NAME>" --cat-power <POWER> --power-mult <N>
+```
+
+Then sanity-check the output (QSO count matches, no skipped records, all
+sections valid) and present the `.log` file.
+
+## Field mapping (Field Day)
 
 | Cabrillo field      | ADIF source                                            |
 |---------------------|--------------------------------------------------------|
 | freq (kHz)          | `FREQ` (MHz × 1000, rounded); falls back to `BAND`     |
 | mode (CW/PH/DG)     | `MODE`/`SUBMODE` → CW, phone→PH, data→DG (FM→PH for FD) |
 | date / time (UTC)   | `QSO_DATE` / `TIME_ON`                                  |
-| my call             | `--callsign`                                            |
-| my class + section  | `--class` / `--section`, else parsed from `STX_STRING`  |
+| my call/class/sect  | from the interview (Steps 2–4)                          |
 | their call          | `CALL`                                                  |
 | their class+section | `SRX_STRING` (e.g. "5A TN"), else `CLASS`+`ARRL_SECT`   |
 
-Mode buckets: CW counts 2 pts, digital (FT8/FT4/RTTY/PSK/MFSK/…) → `DG` 2 pts,
-phone (SSB/FM/AM) → `PH` 1 pt. FM is scored as phone for Field Day.
+Mode points: phone (SSB/FM/AM) → `PH` = 1 pt; CW = 2 pts; digital
+(FT8/FT4/RTTY/PSK/MFSK/…) → `DG` = 2 pts. FM counts as phone for Field Day.
 
-## Usage
+## Important reminders for the operator
 
-```bash
-python3 scripts/adif2cabrillo.py INPUT.adi -o OUTPUT.log \
-  --callsign KK4BSA \
-  --club "NE GA Council Radio Club" \
-  --cat-operator MULTI-OP --cat-station PORTABLE \
-  --cat-transmitter ONE --cat-power LOW --cat-mode MIXED
-```
+- **Cabrillo is not a complete Field Day entry.** Submit the summary sheet at
+  https://field-day.arrl.org/fdentry.php; the Cabrillo attaches there in lieu of
+  the dupe sheet (Field Day Rule 8.7).
+- The stderr score line is a **QSO-points estimate only** — no bonus points, no
+  dupe removal. Use it as a sanity check.
+- The tool does not remove duplicate QSOs.
 
-If `--class`/`--section` are omitted they are read from the ADIF `STX_STRING`
-field (MacLoggerDX, WSJT-X contest mode, and N3FJP all populate it). Override
-them when your logger didn't store the sent exchange.
+## Other contests
 
-Run `python3 scripts/adif2cabrillo.py -h` for all options (other contests via
-`--contest`, address/name/email/soapbox header lines, FM-as-FM, score estimate).
-
-## Important notes for the operator
-
-- **Cabrillo is not a complete Field Day entry.** ARRL still needs the summary
-  sheet submitted at https://field-day.arrl.org/fdentry.php; the Cabrillo file
-  attaches there in lieu of the dupe sheet. (Rule 8.7.)
-- **Verify the header before submitting.** `CATEGORY-*`, `CLAIMED-SCORE`, and
-  power class are operator-specific; the converter fills sensible defaults but
-  the operator is responsible for correctness.
-- The score line printed to stderr is a **QSO-points estimate only** (no bonus
-  points, no dupe removal). Use it as a sanity check, not the official score.
-- The tool does not remove duplicate QSOs; loggers usually flag dupes already.
+Pass `--contest CQ-WW-CW` etc. The current QSO-line layout is the Field Day
+class+section exchange; other exchanges (serial, zone, grid) would need a small
+template addition.
 
 ## Privacy / security
 
-The script runs entirely locally, has no network access, and no third-party
-dependencies. ADIF logs contain personal data (names, emails, addresses of
-worked stations from `NAME`/`EMAIL`/`QTH` fields). The Cabrillo output
-deliberately includes **only** the contest-relevant fields (call, exchange,
-time, band, mode) — none of the personal fields are copied into the output.
-Review any file before sharing it publicly.
+Runs entirely locally, no network, no dependencies. ADIF logs contain personal
+data (worked stations' names, emails, addresses in `NAME`/`EMAIL`/`QTH`). The
+Cabrillo output copies **only** contest fields (call, exchange, time, band,
+mode) and omits all personal fields. Review before sharing publicly.

@@ -135,6 +135,24 @@ def adif_freq_to_khz(freq_mhz, band):
     return band_khz.get((band or "").upper(), "0")
 
 
+# Valid ARRL/RAC Field Day sections (plus DX). Used to warn on typos.
+VALID_SECTIONS = {
+    # ARRL
+    "CT", "EMA", "ME", "NH", "RI", "VT", "WMA", "ENY", "NLI", "NNY", "SNJ",
+    "NNJ", "WNY", "DE", "EPA", "MDC", "WPA", "AL", "GA", "KY", "NC", "NFL",
+    "SC", "SFL", "TN", "VA", "VI", "WCF", "PR", "AR", "LA", "MS", "NM", "NTX",
+    "OK", "STX", "WTX", "EB", "LAX", "ORG", "SB", "SCV", "SDG", "SF", "SJV",
+    "SV", "PAC", "NV", "AZ", "EWA", "ID", "MT", "NNV", "ON", "UT", "WWA", "WY",
+    "AK", "OR", "IA", "KS", "MN", "MO", "ND", "NE", "SD", "IL", "IN", "WI",
+    "MI", "OH", "WV", "CO",
+    # RAC (Canada)
+    "NL", "MAR", "QC", "ONE", "ONN", "ONS", "GTA", "MB", "SK", "AB", "BC",
+    "TER",
+    # DX entrants
+    "DX",
+}
+
+
 # --------------------------------------------------------------------------- #
 # Exchange parsing
 # --------------------------------------------------------------------------- #
@@ -276,6 +294,57 @@ def estimate_fd_score(records, power_mult, fd_phone_as_ph=True):
     return pts, pts * power_mult
 
 
+def inspect(records):
+    """Print a human-readable summary of the log to help interview the operator.
+
+    Writes nothing; used to confirm callsign, class, and section before a real
+    conversion (these are not always reliably present in the ADIF and change
+    year to year)."""
+    from collections import Counter
+
+    def distinct(field):
+        return sorted({(r.get(field) or "").strip()
+                       for r in records if (r.get(field) or "").strip()})
+
+    call_candidates = []
+    for f in ("OPERATOR", "STATION_CALLSIGN", "OWNER_CALLSIGN", "MY_CALL"):
+        for v in distinct(f):
+            call_candidates.append(f"{v} (from {f})")
+
+    bands = Counter((r.get("BAND") or "?").upper() for r in records)
+    modes = Counter(adif_mode_to_cabrillo(r.get("MODE"), r.get("SUBMODE"))
+                    for r in records)
+
+    rx_sections = set()
+    for r in records:
+        _, sec = received_exchange(r)
+        if sec:
+            rx_sections.add(sec)
+    unknown = sorted(s for s in rx_sections if s not in VALID_SECTIONS)
+
+    out = sys.stdout
+    print("ADIF log inspection", file=out)
+    print(f"  QSO records: {len(records)}", file=out)
+    print("  Callsign candidates (the submission call may NOT be in the file):",
+          file=out)
+    if call_candidates:
+        for c in call_candidates:
+            print(f"    - {c}", file=out)
+    else:
+        print("    - (none found - you must supply --callsign)", file=out)
+    print(f"  Sent exchange STX_STRING: {distinct('STX_STRING') or '(none)'}",
+          file=out)
+    print(f"  Bands: {dict(bands)}", file=out)
+    print(f"  Cabrillo modes: {dict(modes)}", file=out)
+    if unknown:
+        print(f"  WARNING unrecognized received sections: {unknown}", file=out)
+    print("\nNext: confirm CALLSIGN (watch for an alternate/special call),",
+          file=out)
+    print("CLASS (#transmitters + letter A-F), and SECTION, then run without",
+          file=out)
+    print("--inspect to write the Cabrillo file.", file=out)
+
+
 # --------------------------------------------------------------------------- #
 # CLI
 # --------------------------------------------------------------------------- #
@@ -285,7 +354,9 @@ def main(argv=None):
         description="Convert an ADIF log to Cabrillo 3.0 (default: ARRL Field Day).")
     p.add_argument("input", help="input ADIF file (.adi/.adif)")
     p.add_argument("-o", "--output", help="output Cabrillo file (default: stdout)")
-    p.add_argument("--callsign", required=True, help="your station callsign, e.g. KK4BSA")
+    p.add_argument("--inspect", action="store_true",
+                   help="summarize the log (callsign/class/section candidates) and exit")
+    p.add_argument("--callsign", default=None, help="your station callsign, e.g. KK4BSA")
     p.add_argument("--class", dest="fdclass", default=None,
                    help="your Field Day class, e.g. 1D (default: read from STX_STRING)")
     p.add_argument("--section", default=None,
@@ -322,6 +393,13 @@ def main(argv=None):
     if not records:
         p.error("no QSO records found in input")
 
+    if args.inspect:
+        inspect(records)
+        return 0
+
+    if not args.callsign:
+        p.error("--callsign is required (run --inspect first to find candidates)")
+
     # Determine our sent class/section: CLI overrides, else infer from STX_STRING.
     my_class = args.fdclass
     my_section = args.section
@@ -356,6 +434,10 @@ def main(argv=None):
         "claimed_score": args.claimed_score,
         "fd_phone_as_ph": not args.fm_as_fm,
     }
+
+    if cfg["section"] not in VALID_SECTIONS:
+        print(f"WARNING: '{cfg['section']}' is not a recognized ARRL/RAC "
+              f"section - double-check before submitting.", file=sys.stderr)
 
     cab, count, warnings = build_cabrillo(records, cfg)
 
