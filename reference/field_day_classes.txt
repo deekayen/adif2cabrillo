@@ -1,0 +1,66 @@
+# ARRL Field Day classes, power multipliers, and QSO points.
+# Source: ARRL Field Day Rules, Sections 4, 5, and 7.
+#   https://www.arrl.org/field-day-rules
+#   https://contests.arrl.org/ContestRules/Field-Day-Rules.pdf
+# The Field Day exchange is: <number-of-transmitters><class-letter> <section>
+#   e.g. "1D GA", "3A CT", "2F OH".  DX stations send class + "DX" (e.g. "2A DX").
+
+## CLASS LETTERS (Rule 4)
+# The number prefix = the maximum number of transmitters capable of
+# simultaneous transmission (minimum 1; bonus points cap at 20).
+
+A   Club / non-club portable, 3+ persons, set up specifically for Field Day,
+    not at a regular station location, not on permanent FD structures.
+    Class A may run a GOTA station and a free VHF station (separate callsign
+    for GOTA). Power must be independent of commercial mains for all contacts
+    (otherwise listed as Class A-Commercial).
+
+AB  Class A-Battery. Same as A but all contacts at <=5 W and powered by
+    something other than commercial mains or a motor-driven generator
+    (battery, solar, water). Listed separately.
+
+B   1 or 2 person portable. Same provisions as A except NOT eligible for a
+    GOTA or free VHF station.
+
+BB  Class B-Battery. Same as B but <=5 W and non-mains / non-generator power.
+
+C   Mobile. Stations in vehicles able to operate in motion (incl. maritime /
+    aeronautical mobile). A car battery/alternator qualifies for emergency
+    power but NOT the x5 multiplier.
+
+D   Home station on commercial power, from a permanent/licensed location.
+    Class D may work all Field Day stations.
+
+E   Home station on emergency power. Same as D but transmitters and receivers
+    on emergency power. Class E may work all Field Day stations.
+
+F   Emergency Operations Center (EOC). Amateur station at an established EOC
+    activated by a club/group. May use equipment/antennas at the EOC. Eligible
+    for a free VHF station.
+
+## POWER MULTIPLIER (Rule 7.2) - determined by the HIGHEST power used by ANY
+## transmitter during the event.
+#  Maps to the script's --cat-power and --power-mult.
+x5  All contacts <=5 W AND powered by battery/solar/water (not mains, not a
+    motor-driven generator). Use --cat-power QRP --power-mult 5.
+x2  All contacts <=5 W but on mains or a generator; OR any/all contacts up to
+    100 W. Use --cat-power LOW --power-mult 2.
+x1  Any contact made at greater than 100 W. Use --cat-power HIGH --power-mult 1.
+#  Power ceilings: Classes A/B/C <=500 W PEP; Classes D/E/F <=100 W PEP.
+
+## QSO POINTS (Rule 7.1)  - applied per contact, before the power multiplier.
+PH  Phone (SSB/FM/AM)  = 1 point
+CW  CW                 = 2 points
+DG  Digital (non-CW)   = 2 points
+#  Final score = (total QSO points x power multiplier) + bonus points.
+#  Bonus points (Rule 7.3) are claimed on the summary sheet, not in Cabrillo.
+
+## WHAT THE INTERVIEW MUST STILL ASK
+# The rules above are static and saved here, but these are specific to how the
+# operator actually ran and CANNOT be derived from the rules or always from the
+# ADIF, so confirm them each year:
+#   1. Submission CALLSIGN (may be a club/special 1x1 call absent from the log)
+#   2. Number of simultaneous transmitters (the class number prefix)
+#   3. Class letter (A-F / battery variant) - depends on location & power
+#   4. Highest power level used (selects the multiplier)
+#   5. ARRL/RAC section (see reference/arrl_sections.txt)

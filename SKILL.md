@@ -57,19 +57,18 @@ over.
 ### Step 3 — Build the CLASS together
 
 The Field Day class is **<number of transmitters><class letter>**, e.g. `1D`,
-`3A`, `2F`. Construct it with the user — do not just copy `STX_STRING`, since the
-group's class can change year to year:
+`3A`, `2F`. The class-letter definitions, battery variants, power multipliers,
+and QSO point values are saved authoritatively in
+**`reference/field_day_classes.txt`** (sourced from ARRL Field Day Rules
+Sections 4, 5, and 7) — read that file and use it to explain the options; do not
+re-derive them or rely on training memory. The rules are static, but the
+operator's actual setup is not, so confirm rather than copy `STX_STRING` (class
+can change year to year):
 
-- Ask the **number of simultaneous transmitters** (1–20+).
-- Ask the **class letter**:
-  - `A` — Club/group portable (3+ people), not at a permanent station
-  - `B` — 1 or 2 person portable
-  - `C` — Mobile
-  - `D` — Home station on commercial power
-  - `E` — Home station on emergency power
-  - `F` — Emergency Operations Center (EOC)
-  - Append `B` for the 5 W battery variants (Class A-Battery, etc.) only if applicable
-- Show the user what was in the log last (`STX_STRING`) as a default, but confirm.
+- Ask the **number of simultaneous transmitters** (the number prefix, 1–20+).
+- Ask the **class letter** (`A`–`F`, plus `AB`/`BB` battery variants), using the
+  definitions in the reference file.
+- Show last year's value from `STX_STRING` as a default, but confirm.
 
 ### Step 4 — Confirm the SECTION
 
@@ -79,10 +78,15 @@ but confirm.
 
 ### Step 5 — Confirm category/power details
 
-Confirm (defaults in parentheses): operator category (MULTI-OP), station
-(PORTABLE), transmitters (from class number), power class (LOW = ≤100 W; QRP =
-≤5 W; HIGH otherwise), and the power multiplier for the score estimate (×2 for
-≤150 W, ×5 for the 5 W natural-power level, ×1 for >100 W on classes A/B/C).
+Using the power-multiplier and points rules in
+`reference/field_day_classes.txt`, confirm (defaults in parentheses): operator
+category (MULTI-OP), station (PORTABLE), transmitters (from the class number),
+and the highest power level used, which selects both `--cat-power` and
+`--power-mult`:
+
+- ≤5 W on battery/solar/water → `--cat-power QRP --power-mult 5`
+- ≤5 W on mains/generator, or any contact up to 100 W → `--cat-power LOW --power-mult 2`
+- any contact above 100 W → `--cat-power HIGH --power-mult 1`
 
 ### Step 6 — Convert, validate, deliver
 
