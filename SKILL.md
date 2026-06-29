@@ -76,24 +76,40 @@ Ask for the ARRL/RAC section abbreviation (e.g. `GA`). Validate it against
 `reference/arrl_sections.txt`. DX stations use `DX`. Pre-fill from `STX_STRING`
 but confirm.
 
-### Step 5 — Confirm category/power details
+### Step 5 — Ask the Cabrillo CATEGORY fields (do NOT default these)
 
-Using the power-multiplier and points rules in
-`reference/field_day_classes.txt`, confirm (defaults in parentheses): operator
-category (MULTI-OP), station (PORTABLE), transmitters (from the class number),
-and the highest power level used, which selects both `--cat-power` and
-`--power-mult`:
+These header fields are **not in the ADIF** and must be **asked**, not assumed —
+silently defaulting them produced wrong headers in the past. Use
+`AskUserQuestion`. Derive a *suggested* answer from the log where possible
+(mark it recommended) but always let the user confirm or override:
 
-- ≤5 W on battery/solar/water → `--cat-power QRP --power-mult 5`
-- ≤5 W on mains/generator, or any contact up to 100 W → `--cat-power LOW --power-mult 2`
-- any contact above 100 W → `--cat-power HIGH --power-mult 1`
+- **CATEGORY-OPERATOR** (`SINGLE-OP` / `MULTI-OP` / `CHECKLOG`): suggest by the
+  distinct `OPERATOR` calls in the log (one operator → SINGLE-OP), but confirm,
+  since helpers may not appear in the file.
+- **CATEGORY-STATION** (`FIXED` / `PORTABLE` / `MOBILE`): suggest from the class
+  letter — `D`/`E` (home) → FIXED, `A`/`B`/`F` (field/EOC) → PORTABLE, `C` →
+  MOBILE — then confirm.
+- **CATEGORY-POWER** + `--power-mult`: derive a suggestion from `TX_PWR` and the
+  multiplier rules in `reference/field_day_classes.txt`, then confirm:
+  - ≤5 W on battery/solar/water → `--cat-power QRP --power-mult 5`
+  - ≤5 W on mains/generator, or any contact up to 100 W → `--cat-power LOW --power-mult 2`
+  - any contact above 100 W → `--cat-power HIGH --power-mult 1`
+- **CATEGORY-ASSISTED** (`ASSISTED` / `NON-ASSISTED`): cannot be derived; ask.
+  Note it is not used for FD scoring but the header requires it.
+- **CATEGORY-MODE** (`DIGI` / `CW` / `SSB` / `MIXED`): suggest from the modes
+  actually present (all digital → DIGI; a true mix → MIXED), then confirm.
+- **CATEGORY-TRANSMITTER**: set from the class number prefix (1 → ONE, 2 → TWO).
+
+Pass each confirmed value via the matching `--cat-*` flag in Step 6.
 
 ### Step 6 — Convert, validate, deliver
 
 ```bash
 python3 scripts/adif2cabrillo.py INPUT.adi -o OUTPUT.log \
   --callsign <CONFIRMED-CALL> --class <CONFIRMED-CLASS> --section <CONFIRMED-SECTION> \
-  --club "<CLUB NAME>" --cat-power <POWER> --power-mult <N>
+  --club "<CLUB NAME>" \
+  --cat-operator <OP> --cat-station <STATION> --cat-transmitter <TX> \
+  --cat-power <POWER> --cat-assisted <ASSISTED> --cat-mode <MODE> --power-mult <N>
 ```
 
 Then sanity-check the output (QSO count matches, no skipped records, all
